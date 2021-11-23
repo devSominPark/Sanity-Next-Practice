@@ -1,26 +1,19 @@
-import styles from "../styles/Home.module.css";
 import sanityClient from "@sanity/client";
 
-export default function Home({ home, posts }) {
-  console.log(`posts`, posts);
+export default function PostAll({ slug }) {
   return (
-    <div className={styles.container}>
-      <h1> Blog {home.mainPostUrl}</h1>
+    <div>
+      <h1>Post : {slug}</h1>
     </div>
   );
 }
 
-export async function getStaticProps() {
-  // sanity로부터 데이터를 가져옴.
+export async function getStaticPaths() {
   const client = sanityClient({
     dataset: "production",
     projectId: "p2n8abpc",
     useCdn: true,
   });
-
-  const home = await client.fetch(
-    `*[_type == "home"][0]{"mainPostUrl": mainPost -> slug.current}`
-  );
 
   const posts = await client.fetch(
     `
@@ -48,13 +41,28 @@ export async function getStaticProps() {
         title,
         "slug" : slug.current
       }
-    }`
+    }
+    `
   );
 
+  const paths = posts.map((post) => ({
+    params: {
+      slug: post.slug,
+    },
+  }));
+
+  return {
+    paths,
+    fallback: false,
+    //paths에 없으면 404 not found
+  };
+}
+
+export function getStaticProps({ params }) {
+  const { slug } = params;
   return {
     props: {
-      home,
-      posts,
+      slug,
     },
   };
 }
